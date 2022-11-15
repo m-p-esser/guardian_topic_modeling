@@ -24,7 +24,7 @@ def set_logger(log_path):
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger(__name__)
     logger.setLevel(logging.DEBUG)
-    file_handler = logging.FileHandler(log_path, mode="w")
+    file_handler = logging.FileHandler(log_path, mode="a")
     formatter = logging.Formatter(
         "%(asctime)s : %(levelname)s : %(name)s : %(message)s"
     )
