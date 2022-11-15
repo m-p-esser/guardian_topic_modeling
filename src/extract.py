@@ -9,6 +9,7 @@ Usage:
 
 import dotenv
 import click
+import time
 
 from utils import set_logger, parse_config, create_data_range
 from guardian_api import request_content_api, store_content_text, store_content_metadata, store_api_data
@@ -45,10 +46,13 @@ def extract(config_file):
     for date in date_range:
         page = 1
         response = store_api_data(config, page, date)
+        time.sleep(3)
 
         while page < response['pages']:
             page += 1
             response = store_api_data(config, page, date)
+
+        logger.info(f"Extracted data for: {date}")
 
 
 if __name__ == "__main__":
