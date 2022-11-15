@@ -2,9 +2,10 @@ extract:
   raw_data_file_path: "data/raw"
   raw_data_body_file_path: "data/raw/body"
   raw_data_metadata_file_path: "data/raw/metadata"
-  from_date: "2010-01-01"
-  to_date: "2010-01-01"
+  from_date: "2010-02-16"
+  to_date: "2010-06-30"
   order_by: "newest"
   show_fields: "all"
   page_size: 200
   endpoint: "https://content.guardianapis.com/search"
+  timeout: 3
