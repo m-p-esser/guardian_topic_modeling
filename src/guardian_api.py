@@ -8,6 +8,8 @@ Usage:
 """
 
 import requests
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
 import pathlib
 import os
 
@@ -35,7 +37,7 @@ def store_api_data(config, page, date):
 
     # Store the Metadata
     metadata_output_dir = pathlib.Path(config["extract"]["raw_data_metadata_file_path"])
-    store_content_metadata(response, metadata_output_dir)
+    store_content_metadata(response, metadata_output_dir, date)
 
     return response
 
@@ -51,7 +53,16 @@ def request_content_api(config, page, date):
         response [Dict]: Dictionary containing Response from API
     """
 
-    endpoint = config["extract"]["endpoint"]
+    retry_strategy = Retry(
+        total=3,
+        status_forcelist=[429, 500, 502, 503, 504],
+        method_whitelist=["HEAD", "GET", "OPTIONS"]
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    http = requests.Session()
+    http.mount("https://", adapter)
+    http.mount("http://", adapter)
+
     params = {
         'from-date': date,
         'to-date': date,
@@ -61,7 +72,15 @@ def request_content_api(config, page, date):
         'page': page,
         'api-key': os.environ.get('API_KEY')
     }
-    response = requests.get(endpoint, params).json()['response']
+
+    payload = requests.get(
+        url=config["extract"]["endpoint"],
+        params=params
+    )
+
+    payload.raise_for_status()
+    response = payload.json()['response']
+
     return response
 
 
@@ -80,14 +99,13 @@ def store_content_text(result, output_dir):
         f.write(content_text)
 
 
-def store_content_metadata(response, output_dir):
+def store_content_metadata(response, output_dir, date):
     """
     Store Content Metadata
     Args:
         response [Dict]: Dictionary containing Response from API
         output_dir [pathlib.Path]: Pathlib Path
     """
-    date = output_dir.name
     number_results = len(response['results'])
     df = pd.json_normalize(
         response['results'],
@@ -101,4 +119,4 @@ def store_content_metadata(response, output_dir):
                          f"rows, but got {number_results} rows")
 
     file_path_out = output_dir / f'{date}.csv'
-    df.to_csv(file_path_out, index=False)
+    df.to_csv(file_path_out, index=False, sep=";")
