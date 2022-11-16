@@ -7,6 +7,7 @@ Usage:
     python3 ./src/extract.py
 """
 
+import logging
 import requests
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -91,12 +92,16 @@ def store_content_text(result, output_dir):
         result [Dict]: Dictionary containing single content item
         output_dir [pathlib.Path]: Pathlib Path
     """
-    content_id = result['id'].replace('/', '_')
-    content_text = result['fields']['body']
+    try:
+        content_id = result['id'].replace('/', '_')
+        content_text = result['fields']['body']
 
-    file_path_out = output_dir / f'{content_id}.html'
-    with open(file_path_out, "w", encoding="utf-8") as f:
-        f.write(content_text)
+        file_path_out = output_dir / f'{content_id}.html'
+        with open(file_path_out, "w", encoding="utf-8") as f:
+            f.write(content_text)
+
+    except Exception as e:
+        logging.error(str(e))
 
 
 def store_content_metadata(response, output_dir, date):
