@@ -12,7 +12,7 @@ import click
 import time
 
 from utils import set_logger, parse_config, create_data_range
-from guardian_api import request_content_api, store_content_text, store_content_metadata, store_api_data
+from guardian_api import store_api_data
 
 
 @click.command()
