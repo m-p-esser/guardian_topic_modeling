@@ -19,7 +19,7 @@ from guardian_api import store_api_data
 @click.argument("config_file", type=str, default="src/config.yml")
 def extract(config_file):
     """
-    ETL function that loads data from Guardian Content API Endpoint and stores in local file directory
+    ETL function that load raw data and convert to train and test set
     Args:
         config_file [str]: path to config file
     Returns:
@@ -46,9 +46,9 @@ def extract(config_file):
     for date in date_range:
         page = 1
         response = store_api_data(config, page, date)
-        time.sleep(1)
+        time.sleep(3)
 
-        while page < response["pages"]:
+        while page < response['pages']:
             page += 1
             response = store_api_data(config, page, date)
 
