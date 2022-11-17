@@ -20,7 +20,6 @@ import time
 import pandas as pd
 
 from utils import set_logger, parse_config, create_data_range
-from guardian_api import store_api_data
 
 
 def store_api_data(config, page, date):
