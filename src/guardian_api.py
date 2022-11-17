@@ -3,8 +3,6 @@
 """
 These functions are used to extract data from Guardian Content API and store them in a local folder
 It is designed to be idempotent [stateless transformation]
-Usage:
-    python3 ./src/extract.py
 """
 
 import logging
@@ -28,7 +26,7 @@ def store_api_data(config, page, date):
         response [Dict]: Dictionary containing Response from API
     """
     response = request_content_api(config, page, date)
-    results = response['results']
+    results = response["results"]
 
     # Store the actual Content data
     body_output_dir = pathlib.Path(config["extract"]["raw_data_body_file_path"]) / date
@@ -38,7 +36,7 @@ def store_api_data(config, page, date):
 
     # Store the Metadata
     metadata_output_dir = pathlib.Path(config["extract"]["raw_data_metadata_file_path"])
-    store_content_metadata(response, metadata_output_dir, date)
+    store_content_metadata(response, metadata_output_dir, page, date)
 
     return response
 
@@ -57,7 +55,7 @@ def request_content_api(config, page, date):
     retry_strategy = Retry(
         total=3,
         status_forcelist=[429, 500, 502, 503, 504],
-        method_whitelist=["HEAD", "GET", "OPTIONS"]
+        method_whitelist=["HEAD", "GET", "OPTIONS"],
     )
     adapter = HTTPAdapter(max_retries=retry_strategy)
     http = requests.Session()
@@ -65,22 +63,19 @@ def request_content_api(config, page, date):
     http.mount("http://", adapter)
 
     params = {
-        'from-date': date,
-        'to-date': date,
-        'order-by': config["extract"]["order_by"],
-        'show-fields': config["extract"]["show_fields"],
-        'page-size': config["extract"]["page_size"],
-        'page': page,
-        'api-key': os.environ.get('API_KEY')
+        "from-date": date,
+        "to-date": date,
+        "order-by": config["extract"]["order_by"],
+        "show-fields": config["extract"]["show_fields"],
+        "page-size": config["extract"]["page_size"],
+        "page": page,
+        "api-key": os.environ.get("API_KEY"),
     }
 
-    payload = requests.get(
-        url=config["extract"]["endpoint"],
-        params=params
-    )
+    payload = requests.get(url=config["extract"]["endpoint"], params=params)
 
     payload.raise_for_status()
-    response = payload.json()['response']
+    response = payload.json()["response"]
 
     return response
 
@@ -93,10 +88,10 @@ def store_content_text(result, output_dir):
         output_dir [pathlib.Path]: Pathlib Path
     """
     try:
-        content_id = result['id'].replace('/', '_')
-        content_text = result['fields']['body']
+        content_id = result["id"].replace("/", "_")
+        content_text = result["fields"]["body"]
 
-        file_path_out = output_dir / f'{content_id}.html'
+        file_path_out = output_dir / f"{content_id}.html"
         with open(file_path_out, "w", encoding="utf-8") as f:
             f.write(content_text)
 
@@ -104,24 +99,30 @@ def store_content_text(result, output_dir):
         logging.error(str(e))
 
 
-def store_content_metadata(response, output_dir, date):
+def store_content_metadata(response, output_dir, page, date):
     """
     Store Content Metadata
     Args:
         response [Dict]: Dictionary containing Response from API
         output_dir [pathlib.Path]: Pathlib Path
+        page [int]: Page Number
+        date [str]: Date String in "%Y-%m-%d" format
     """
-    number_results = len(response['results'])
-    df = pd.json_normalize(
-        response['results'],
-        sep="_"
-    )
-    df['content_id'] = df['id'].str.replace('/','_')
-    df = df.drop(columns=['id', 'fields_body'])
+    number_results = len(response["results"])
+    df = pd.json_normalize(response["results"], sep="_")
+    df["content_id"] = df["id"].str.replace("/", "_")
+    df = df.drop(columns=["id", "fields_body", "fields_bodyText"])
 
     if len(df) != number_results:
-        raise ValueError(f"while collecting data for {response['date']} an error has been raised. Expected {len(df)} "
-                         f"rows, but got {number_results} rows")
+        raise ValueError(
+            f"while collecting data for {response['date']} an error has been raised. Expected {len(df)} "
+            f"rows, but got {number_results} rows"
+        )
 
-    file_path_out = output_dir / f'{date}.csv'
-    df.to_csv(file_path_out, index=False, sep=";")
+    file_path_out = output_dir / f"{date}.csv"
+    if page == 1:
+        df.to_csv(file_path_out, index=False, sep=";")
+    else:
+        existing_df = pd.read_csv(file_path_out, sep=";")
+        df_combined = pd.concat([existing_df, df])
+        df_combined.to_csv(file_path_out, index=False, sep=";")
