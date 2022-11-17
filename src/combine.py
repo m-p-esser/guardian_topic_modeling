@@ -32,8 +32,12 @@ def combine(input_dir, output_dir):
     logger = set_logger("./logs/extract.log")
 
     # Load, combine and store
+    counter = 0
     file_paths = list(pathlib.Path(input_dir).rglob("*.csv"))
     number_files = len(file_paths)
+    for fp in file_paths:
+        df = pd.read_csv(fp, sep=";")
+        counter += len(df)
     df = pd.concat([pd.read_csv(fp, sep=";") for fp in file_paths])
     file_path_out = pathlib.Path(output_dir) / 'metadata.feather'
     df.reset_index().to_feather(file_path_out)
