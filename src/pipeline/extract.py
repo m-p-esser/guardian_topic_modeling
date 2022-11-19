@@ -35,11 +35,11 @@ def store_api_data(config, page, date):
     response = request_content_api(config, page, date)
     results = response["results"]
 
-    # # Store the actual Content data
-    # body_output_dir = pathlib.Path(config["extract"]["raw_data_body_file_path"]) / date
-    # body_output_dir.mkdir(exist_ok=True)
-    # for result in results:
-    #     store_content_text(result, body_output_dir)
+    # Store the actual Content data
+    body_output_dir = pathlib.Path(config["extract"]["raw_data_body_file_path"]) / date
+    body_output_dir.mkdir(exist_ok=True)
+    for result in results:
+        store_content_text(result, body_output_dir)
 
     # Store the Metadata
     metadata_output_dir = pathlib.Path(config["extract"]["raw_data_metadata_file_path"])
