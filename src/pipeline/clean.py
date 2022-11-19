@@ -14,7 +14,7 @@ import pandas as pd
 import pyarrow
 
 from src.utils import set_logger, parse_config
-from src.nlp import remove_html
+from src.pipeline.preprocess import remove_html
 
 
 @click.command()
@@ -45,8 +45,6 @@ def clean(config_file):
     only_english = df["fields_lang"] == "en"
     df = df[only_english & only_articles]
 
-    # Only keep Articles where Text data is available
-
     # Remove prefix from column names
     df.columns = [col.replace("fields_", "") for col in df.columns]
 
@@ -63,6 +61,21 @@ def clean(config_file):
     keep_columns = [col for col in df.columns if col not in drop_columns]
     df = df.loc[:, keep_columns]
 
+    # Convert Datetime formatted as String to Date
+    for col in [
+        "webPublicationDate",
+        "fields_lastModified",
+        "fields_newspaperEditionDate",
+        "fields_firstPublicationDate",
+        "fields_scheduledPublicationDate",
+    ]:
+        df[col] = pd.to_datetime(df[col])
+
+    # Convert Object to Categorical Variables
+    df[df.select_dtypes(["object"]).columns] = df.select_dtypes(["object"]).apply(
+        lambda x: x.astype("category")
+    )
+
     # Recode variables
     for col in [
         "showAffiliateLinks",
@@ -75,8 +88,6 @@ def clean(config_file):
     # Remove HTML Tags
     for col in ["standfirst", "trailText"]:
         df[col] = df[col].apply(lambda x: remove_html(str(x)))
-
-    # Convert Variable Types
 
     # Store locally
     output_file_path = (
