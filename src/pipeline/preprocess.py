@@ -9,8 +9,8 @@ Usage:
 
 import click
 
-from utils import set_logger, parse_config
-from nlp import HtmlSubdirsCorpus
+from src.utils import set_logger, parse_config
+from src.nlp import HtmlSubdirsCorpus
 
 
 @click.command()
