@@ -12,8 +12,9 @@ import pathlib
 import click
 import pandas as pd
 import dask.dataframe as dd
+import pyarrow
 
-from utils import set_logger, parse_config
+from src.utils import set_logger, parse_config
 
 
 @click.command()
@@ -53,10 +54,10 @@ def combine(input_dir, output_dir, config_file):
     )
 
     df = df.compute()  # Convert to Pandas Dataframe
-    output_dir = pathlib.Path(output_dir) / "metadata.parquet"
-    df.to_parquet(output_dir)
+    output_file_path = pathlib.Path(output_dir) / "metadata.parquet"
+    df.to_parquet(output_file_path)
     logger.info(
-        f"Combined {number_files} of files into one file. Stored the file in following path: {output_dir}"
+        f"Combined {number_files} of files into one file. Stored the file in following path: {output_file_path}"
     )
 
 
