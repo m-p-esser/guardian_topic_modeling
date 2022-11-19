@@ -25,6 +25,23 @@ from bs4 import BeautifulSoup
 from src.utils import parse_config, set_logger
 
 
+def remove_html(document):
+    html_pattern = r"<.*?>"
+    document = re.sub(html_pattern, "", document)
+    return document
+
+
+def remove_urls(document):
+    url_pattern = r"http\S+"
+    document = re.sub(url_pattern, "", document)
+    return document
+
+
+def remove_punctuation(document):
+    document = document.translate(str.maketrans("", "", document.punctuation))
+    return document
+
+
 class HtmlSubdirsCorpus(object):
     """
     Iterable: on each iteration, process one document at a time using generators, never load the entire corpus into RAM.
@@ -36,20 +53,6 @@ class HtmlSubdirsCorpus(object):
         self.dictionary = corpora.Dictionary(
             self.load_documents(corpus_directory, config)
         )
-
-    def remove_html(document):
-        html_pattern = r"<.*?>"
-        document = re.sub(html_pattern, "", document)
-        return document
-
-    def remove_urls(document):
-        url_pattern = r"http\S+"
-        document = re.sub(url_pattern, "", document)
-        return document
-
-    def remove_punctuation(document):
-        document = document.translate(str.maketrans("", "", document.punctuation))
-        return document
 
     def preprocess_document(self, config, document):
         if config["preprocess"]["remove_stop_words"]:
