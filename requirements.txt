@@ -8,3 +8,7 @@ PyYAML==6.0
 requests==2.28.1
 pyarrow==10.0.0
 nltk==3.7
+streamlit==1.15.0
+pyLDAvis==3.3.1
+gcsfs==2022.11.0
+plotly==5.11.0
