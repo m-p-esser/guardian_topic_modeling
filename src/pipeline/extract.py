@@ -35,15 +35,19 @@ def store_api_data(config, page, date):
     response = request_content_api(config, page, date)
     results = response["results"]
 
-    # Store the actual Content data
-    body_output_dir = pathlib.Path(config["extract"]["raw_data_body_file_path"]) / date
-    body_output_dir.mkdir(exist_ok=True)
-    for result in results:
-        store_content_text(result, body_output_dir)
+    # # Store the actual Content data
+    # body_output_dir = pathlib.Path(config["extract"]["raw_data_body_file_path"]) / date
+    # body_output_dir.mkdir(exist_ok=True)
+    # for result in results:
+    #     store_content_text(result, body_output_dir)
+    #
+    # # Store the Metadata
+    # metadata_output_dir = pathlib.Path(config["extract"]["raw_data_metadata_file_path"])
+    # store_content_metadata(response, metadata_output_dir, page, date)
 
-    # Store the Metadata
-    metadata_output_dir = pathlib.Path(config["extract"]["raw_data_metadata_file_path"])
-    store_content_metadata(response, metadata_output_dir, page, date)
+    # Store Tag Data
+    keywords_output_dir = pathlib.Path(config["extract"]["raw_data_keywords_file_path"])
+    store_keywords(response, keywords_output_dir, page, date)
 
     return response
 
@@ -74,6 +78,7 @@ def request_content_api(config, page, date):
         "to-date": date,
         "order-by": config["extract"]["order_by"],
         "show-fields": config["extract"]["show_fields"],
+        "show-tags": config["extract"]["show_tags"],
         "page-size": config["extract"]["page_size"],
         "page": page,
         "api-key": os.environ.get("API_KEY"),
@@ -122,12 +127,38 @@ def store_content_metadata(response, output_dir, page, date):
 
     if len(df) != number_results:
         raise ValueError(
-            f"while collecting data for {response['date']} an error has been raised. Expected {len(df)} "
+            f"while collecting data for {date} an error has been raised. Expected {len(df)} "
             f"rows, but got {number_results} rows"
         )
 
     file_path_out = output_dir / f"{date}_{page}.csv"
     df.to_csv(file_path_out, index=False, sep=";")
+
+
+def store_keywords(response, output_dir, page, date):
+    """
+    Store Tags Data
+    Args:
+        response [Dict]: Dictionary containing Response from API
+        output_dir [pathlib.Path]: Pathlib Path
+        page [int]: Page Number
+        date [str]: Date String in "%Y-%m-%d" format
+    """
+    number_results = len(response["results"])
+    df = pd.DataFrame()
+    for i in range(0, number_results):
+        tags = response["results"][i].get("tags")
+        if isinstance(tags, list):
+            df_temp = pd.json_normalize(response["results"][i].get("tags"), sep="_")
+            df_temp = df_temp[df_temp["type"] == "keyword"]
+            df_temp = df_temp.rename(columns={"id": "keyword"})
+            df_temp = df_temp.loc[:, ["keyword"]]
+            df_temp["content_id"] = response["results"][i]["id"].replace("/", "_")
+            df = pd.concat([df, df_temp])
+
+    if len(df) > 0:
+        file_path_out = output_dir / f"{date}_{page}.csv"
+        df.to_csv(file_path_out, index=False, sep=";")
 
 
 @click.command()
