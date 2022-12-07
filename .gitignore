@@ -134,7 +134,7 @@ dmypy.json
 .pyre/
 
 # Data
-data/
+data/*
 .env
 notebooks/
 config.yml
